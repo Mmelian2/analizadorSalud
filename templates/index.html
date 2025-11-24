@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador de Salud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div id="app" class="p-8">
+        <!-- Menu Principal -->
+        <div id="menu" class="max-w-4xl mx-auto">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2"><i class="fa-solid fa-stethoscope"></i> Analizador de Salud</h1>
+                <p class="text-gray-600">Análisis de parámetros sanguíneos y proyección de riesgos</p>
+                <p class="text-sm text-gray-500 mt-2">Glucosa • Colesterol LDL • Hemoglobina</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <button onclick="mostrarFormulario()" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                    <div class="text-6xl mb-4"><i class="fa-solid fa-hospital-user"></i></div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Ingresar Valores</h2>
+                    <p class="text-gray-600">Ingresa tus propios resultados de análisis</p>
+                </button>
+
+                <button onclick="cargarPaciente('saludable')" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                    <div class="text-6xl mb-4"><i class="fa-solid fa-circle-check"></i></div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Paciente Saludable</h2>
+                    <p class="text-gray-600">Valores dentro de rangos normales</p>
+                </button>
+
+                <button onclick="cargarPaciente('intermedio')" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                    <div class="text-6xl mb-4"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Paciente Intermedio</h2>
+                    <p class="text-gray-600">Valores en zona de precaución</p>
+                </button>
+
+                <button onclick="cargarPaciente('riesgo')" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                    <div class="text-6xl mb-4"><i class="fa-solid fa-bed-pulse"></i></div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Paciente de Riesgo</h2>
+                    <p class="text-gray-600">Valores requieren atención médica</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Formulario -->
+        <div id="formulario" class="hidden max-w-3xl mx-auto fade-in">
+            <button onclick="mostrarMenu()" class="mb-6 text-indigo-600 hover:text-indigo-800 font-semibold">
+                ← Volver al menú
+            </button>
+
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Ingresar Resultados de Análisis</h2>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-2">Sexo del Paciente</label>
+                    <div class="flex gap-4">
+                        <button id="btnM" onclick="setSexo('M')" class="flex-1 py-3 px-6 rounded-lg font-semibold bg-indigo-600 text-white">
+                            Masculino
+                        </button>
+                        <button id="btnF" onclick="setSexo('F')" class="flex-1 py-3 px-6 rounded-lg font-semibold bg-gray-100 text-gray-700">
+                            Femenino
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-6 mb-6">
+                    <div class="bg-gray-50 p-5 rounded-lg">
+                        <label class="block text-gray-800 font-bold mb-2 text-lg">Glucosa (mg/dL)</label>
+                        <input type="number" id="Glucosa" step="0.1" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Ingrese valor">
+                        <p class="text-sm text-gray-600 mt-2">Normal: &lt; 100 | Prediabetes: 100-125 | Diabetes: ≥ 126</p>
+                    </div>
+
+                    <div class="bg-gray-50 p-5 rounded-lg">
+                        <label class="block text-gray-800 font-bold mb-2 text-lg">Colesterol LDL (mg/dL)</label>
+                        <input type="number" id="Colesterol_LDL" step="0.1" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Ingrese valor">
+                        <p class="text-sm text-gray-600 mt-2">Óptimo: &lt; 100 | Normal: 100-159 | Alto: ≥ 160</p>
+                    </div>
+
+                    <div class="bg-gray-50 p-5 rounded-lg">
+                        <label class="block text-gray-800 font-bold mb-2 text-lg">Hemoglobina (g/dL)</label>
+                        <input type="number" id="Hemoglobina" step="0.1" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Ingrese valor">
+                        <p id="refHemoglobina" class="text-sm text-gray-600 mt-2">Normal Hombre: 13.2 - 16.6 g/dL</p>
+                    </div>
+                </div>
+
+                <button onclick="analizarSalud()" class="w-full bg-indigo-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-indigo-700 transition-all">
+                    Analizar Parámetros de Salud
+                </button>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div id="resultados" class="hidden max-w-5xl mx-auto fade-in">
+            <button onclick="mostrarMenu()" class="mb-6 text-indigo-600 hover:text-indigo-800 font-semibold">
+                ← Volver al menú
+            </button>
+
+            <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6"><i class="fa-solid fa-clipboard-list"></i>Informe de Análisis</h2>
+                
+                <div id="nivelRiesgo" class="rounded-xl p-6 mb-6"></div>
+                
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Resultados Inmediatos</h3>
+                <div id="resultadosInmediatos" class="space-y-4"></div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4"><i class="fa-solid fa-calendar"></i> Proyección de Riesgos a Largo Plazo</h3>
+                <p class="text-gray-600 mb-6">Índice de riesgo proyectado si los valores actuales persisten sin tratamiento (0-100)</p>
+                <div id="proyecciones" class="grid md:grid-cols-2 gap-4"></div>
+                <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-gray-700">
+                        <strong>Nota:</strong> Las proyecciones utilizan un modelo exponencial. Valores bajos (&lt;20) indican 
+                        bajo riesgo futuro, mientras que valores altos (&gt;75) sugieren necesidad urgente de intervención.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4"><i class="fa-solid fa-lightbulb"></i> Recomendaciones</h3>
+                <div id="recomendaciones" class="space-y-3 text-gray-700"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sexo = 'M';
+        let datosActuales = {};
+
+        const PACIENTES = {
+            saludable: {
+                sexo: 'M',
+                valores: { Glucosa: 85, Colesterol_LDL: 95, Hemoglobina: 14.5 }
+            },
+            intermedio: {
+                sexo: 'F',
+                valores: { Glucosa: 110, Colesterol_LDL: 145, Hemoglobina: 12.8 }
+            },
+            riesgo: {
+                sexo: 'M',
+                valores: { Glucosa: 135, Colesterol_LDL: 180, Hemoglobina: 10.2 }
+            }
+        };
+
+        function mostrarMenu() {
+            document.getElementById('menu').classList.remove('hidden');
+            document.getElementById('formulario').classList.add('hidden');
+            document.getElementById('resultados').classList.add('hidden');
+        }
+
+        function mostrarFormulario() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('formulario').classList.remove('hidden');
+            document.getElementById('resultados').classList.add('hidden');
+        }
+
+        function mostrarResultados() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('formulario').classList.add('hidden');
+            document.getElementById('resultados').classList.remove('hidden');
+        }
+
+        function setSexo(s) {
+            sexo = s;
+            document.getElementById('btnM').className = s === 'M' ? 
+                'flex-1 py-3 px-6 rounded-lg font-semibold bg-indigo-600 text-white' :
+                'flex-1 py-3 px-6 rounded-lg font-semibold bg-gray-100 text-gray-700';
+            document.getElementById('btnF').className = s === 'F' ? 
+                'flex-1 py-3 px-6 rounded-lg font-semibold bg-indigo-600 text-white' :
+                'flex-1 py-3 px-6 rounded-lg font-semibold bg-gray-100 text-gray-700';
+            
+            document.getElementById('refHemoglobina').textContent = s === 'M' ?
+                'Normal Hombre: 13.2 - 16.6 g/dL' :
+                'Normal Mujer: 11.6 - 15.0 g/dL';
+        }
+
+        function cargarPaciente(tipo) {
+            const paciente = PACIENTES[tipo];
+            setSexo(paciente.sexo);
+            document.getElementById('Glucosa').value = paciente.valores.Glucosa;
+            document.getElementById('Colesterol_LDL').value = paciente.valores.Colesterol_LDL;
+            document.getElementById('Hemoglobina').value = paciente.valores.Hemoglobina;
+            mostrarFormulario();
+        }
+
+        async function analizarSalud() {
+            const valores = {
+                Glucosa: parseFloat(document.getElementById('Glucosa').value),
+                Colesterol_LDL: parseFloat(document.getElementById('Colesterol_LDL').value),
+                Hemoglobina: parseFloat(document.getElementById('Hemoglobina').value)
+            };
+
+            if (!valores.Glucosa || !valores.Colesterol_LDL || !valores.Hemoglobina) {
+                alert('Por favor complete todos los campos');
+                return;
+            }
+
+            datosActuales = { sexo, valores };
+
+            try {
+                const response = await fetch('/analizar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sexo, valores })
+                });
+
+                const data = await response.json();
+                mostrarResultadosHTML(data);
+            } catch (error) {
+                alert('Error al analizar: ' + error.message);
+            }
+        }
+
+        function mostrarResultadosHTML(data) {
+            // Nivel de Riesgo
+            const riesgos = Object.values(data.resultados).filter(r => r.includes('Riesgo')).length;
+            let nivelRiesgo, colorRiesgo, bgRiesgo;
+            
+            if (riesgos === 0) {
+                nivelRiesgo = 'Bajo - Saludable';
+                colorRiesgo = 'text-green-600';
+                bgRiesgo = 'bg-green-100';
+            } else if (riesgos <= 2) {
+                nivelRiesgo = 'Moderado';
+                colorRiesgo = 'text-yellow-600';
+                bgRiesgo = 'bg-yellow-100';
+            } else {
+                nivelRiesgo = 'Alto';
+                colorRiesgo = 'text-red-600';
+                bgRiesgo = 'bg-red-100';
+            }
+
+            document.getElementById('nivelRiesgo').className = `${bgRiesgo} rounded-xl p-6 mb-6`;
+            document.getElementById('nivelRiesgo').innerHTML = `
+                <div class="text-center">
+                    <p class="text-gray-700 font-semibold mb-2">Evaluación de Riesgo General</p>
+                    <p class="text-4xl font-bold ${colorRiesgo}">${nivelRiesgo}</p>
+                    <p class="text-gray-600 mt-2">Factores de Riesgo Detectados: ${riesgos}</p>
+                </div>
+            `;
+
+            // Resultados Inmediatos
+            const labels = {
+                Glucosa: 'Glucosa (mg/dL)',
+                Colesterol_LDL: 'Colesterol LDL (mg/dL)',
+                Hemoglobina: 'Hemoglobina (g/dL)'
+            };
+
+            let htmlResultados = '';
+            for (const [param, resultado] of Object.entries(data.resultados)) {
+                const isNormal = resultado === 'Normal' || resultado === 'Normal/Óptimo';
+                const color = isNormal ? 'text-green-600' : resultado.includes('Alto') ? 'text-red-600' : 'text-yellow-600';
+                const bg = isNormal ? 'bg-green-50' : resultado.includes('Alto') ? 'bg-red-50' : 'bg-yellow-50';
+                const border = isNormal ? 'border-green-600' : resultado.includes('Alto') ? 'border-red-600' : 'border-yellow-600';
+                const icon = isNormal ? '<i class="fa-solid fa-check-double"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
+
+                htmlResultados += `
+                    <div class="${bg} rounded-lg p-5 border-l-4 ${border}">
+                        <div class="flex justify-between items-center">
+                            <div class="flex-1">
+                                <p class="font-bold text-gray-800 text-lg">${labels[param]}</p>
+                                <p class="text-gray-700 mt-1">Valor medido: <span class="font-semibold">${datosActuales.valores[param]}</span></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-xl ${color}">${icon} ${resultado}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('resultadosInmediatos').innerHTML = htmlResultados;
+
+            // Proyecciones
+            let htmlProyecciones = '';
+            for (const [key, valor] of Object.entries(data.proyecciones)) {
+                const colorProy = valor < 20 ? 'text-green-600' : valor < 50 ? 'text-yellow-600' : valor < 75 ? 'text-orange-600' : 'text-red-600';
+                const bgProy = valor < 20 ? 'bg-green-50' : valor < 50 ? 'bg-yellow-50' : valor < 75 ? 'bg-orange-50' : 'bg-red-50';
+                const nombre = key.replace('_12', ' - 12 meses').replace('_60', ' - 60 meses (5 años)').replace('_', ' ');
+
+                htmlProyecciones += `
+                    <div class="${bgProy} p-5 rounded-lg">
+                        <p class="font-semibold text-gray-800 mb-2">${nombre}</p>
+                        <p class="text-3xl font-bold ${colorProy}">${valor.toFixed(1)}</p>
+                    </div>
+                `;
+            }
+            document.getElementById('proyecciones').innerHTML = htmlProyecciones;
+
+            // Recomendaciones
+            let recomendaciones = '';
+            if (nivelRiesgo.includes('Bajo')) {
+                recomendaciones = `
+                    <p class="flex items-start gap-2"><span class="text-green-600 font-bold">✓</span><span>Mantén tus hábitos saludables actuales.</span></p>
+                    <p class="flex items-start gap-2"><span class="text-green-600 font-bold">✓</span><span>Continúa con ejercicio regular y alimentación balanceada.</span></p>
+                    <p class="flex items-start gap-2"><span class="text-green-600 font-bold">✓</span><span>Realiza chequeos preventivos anuales.</span></p>
+                `;
+            } else if (nivelRiesgo === 'Moderado') {
+                recomendaciones = `
+                    <p class="flex items-start gap-2"><span class="text-yellow-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span><span>Algunos valores están fuera del rango óptimo.</span></p>
+                    <p class="flex items-start gap-2"><span class="text-yellow-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span><span>Consulta con un médico para evaluación detallada.</span></p>
+                    <p class="flex items-start gap-2"><span class="text-yellow-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span><span>Monitorea tus valores cada 3-6 meses.</span></p>
+                `;
+            } else {
+                recomendaciones = `
+                    <p class="flex items-start gap-2"><span class="text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span><span><strong>IMPORTANTE:</strong> Consulta con un médico lo antes posible.</span></p>
+                    <p class="flex items-start gap-2"><span class="text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span><span>Tus valores indican riesgo significativo.</span></p>
+                    <p class="flex items-start gap-2"><span class="text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span><span>La intervención temprana es crucial.</span></p>
+                `;
+            }
+            document.getElementById('recomendaciones').innerHTML = recomendaciones;
+
+            mostrarResultados();
+        }
+    </script>
+</body>
+</html>
