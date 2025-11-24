@@ -135,55 +135,268 @@
         </div>
     </div>
 
-    <script>
-        document.getElementById("form-datos").addEventListener("submit", async (e) => {
-            e.preventDefault();
+<script>
+    let sexo = 'M';
+    let datosActuales = {};
 
-            // Tomar los valores del formulario
-            const datos = {
-                ldl: parseFloat(document.getElementById("ldl").value),
-                glucosa: parseFloat(document.getElementById("glucosa").value),
-                hemoglobina: parseFloat(document.getElementById("hemoglobina").value)
-            };
+    const PACIENTES = {
+        saludable: {
+            sexo: 'M',
+            valores: { Glucosa: 85, Colesterol_LDL: 95, Hemoglobina: 14.5 }
+        },
+        intermedio: {
+            sexo: 'F',
+            valores: { Glucosa: 110, Colesterol_LDL: 145, Hemoglobina: 12.8 }
+        },
+        riesgo: {
+            sexo: 'M',
+            valores: { Glucosa: 135, Colesterol_LDL: 180, Hemoglobina: 10.2 }
+        }
+    };
 
-            // Enviar al backend sin modificar analizador.py
+    function mostrarMenu() {
+        document.getElementById('menu').classList.remove('hidden');
+        document.getElementById('formulario').classList.add('hidden');
+        document.getElementById('resultados').classList.add('hidden');
+    }
+
+    function mostrarFormulario() {
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('formulario').classList.remove('hidden');
+        document.getElementById('resultados').classList.add('hidden');
+    }
+
+    function mostrarResultados() {
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('formulario').classList.add('hidden');
+        document.getElementById('resultados').classList.remove('hidden');
+    }
+
+    function setSexo(s) {
+        sexo = s;
+        document.getElementById('btnM').className = s === 'M'
+            ? 'flex-1 py-3 px-6 rounded-lg font-semibold bg-indigo-600 text-white'
+            : 'flex-1 py-3 px-6 rounded-lg font-semibold bg-gray-100 text-gray-700';
+
+        document.getElementById('btnF').className = s === 'F'
+            ? 'flex-1 py-3 px-6 rounded-lg font-semibold bg-indigo-600 text-white'
+            : 'flex-1 py-3 px-6 rounded-lg font-semibold bg-gray-100 text-gray-700';
+
+        document.getElementById('refHemoglobina').textContent = s === 'M'
+            ? 'Normal Hombre: 13.2 - 16.6 g/dL'
+            : 'Normal Mujer: 11.6 - 15.0 g/dL';
+    }
+
+    function cargarPaciente(tipo) {
+        const paciente = PACIENTES[tipo];
+        setSexo(paciente.sexo);
+        document.getElementById('Glucosa').value = paciente.valores.Glucosa;
+        document.getElementById('Colesterol_LDL').value = paciente.valores.Colesterol_LDL;
+        document.getElementById('Hemoglobina').value = paciente.valores.Hemoglobina;
+        mostrarFormulario();
+    }
+
+    // ===========================
+    // VALIDACIONES DEL FRONTEND
+    // ===========================
+    function validarValores(v) {
+        if (isNaN(v.Glucosa) || v.Glucosa < 40 || v.Glucosa > 400) {
+            alert("La glucosa debe estar entre 40 y 400 mg/dL.");
+            return false;
+        }
+        if (isNaN(v.Colesterol_LDL) || v.Colesterol_LDL < 40 || v.Colesterol_LDL > 350) {
+            alert("El colesterol LDL debe estar entre 40 y 350 mg/dL.");
+            return false;
+        }
+        if (isNaN(v.Hemoglobina) || v.Hemoglobina < 5 || v.Hemoglobina > 20) {
+            alert("La hemoglobina debe estar entre 5 y 20 g/dL.");
+            return false;
+        }
+        return true;
+    }
+
+    // ==============================
+    // ENVÍO REAL AL BACKEND
+    // ==============================
+    async function analizarSalud() {
+        const valores = {
+            Glucosa: parseFloat(document.getElementById('Glucosa').value),
+            Colesterol_LDL: parseFloat(document.getElementById('Colesterol_LDL').value),
+            Hemoglobina: parseFloat(document.getElementById('Hemoglobina').value)
+        };
+
+        if (!validarValores(valores)) return;
+
+        datosActuales = { sexo, valores };
+
+        try {
             const response = await fetch("/analizar", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(datos)
+                body: JSON.stringify({
+                    sexo: sexo,
+                    valores: valores
+                })
             });
 
             const data = await response.json();
 
-            // Mostrar secciones
-            document.getElementById("resultadosInmediatos").style.display = "block";
-            document.getElementById("proyeccionesLargoPlazo").style.display = "block";
+            mostrarResultadosHTML(data);
+        } catch (error) {
+            alert("Error al comunicarse con el servidor: " + error.message);
+        }
+    }
 
-            // ---------------------------
-            // RESULTADOS INMEDIATOS
-            // ---------------------------
-            const inmediatos = data.resultados_inmediatos;
+    // -----------------------------
+    // MOSTRAR DATOS DEL BACKEND
+    // -----------------------------
+    function mostrarResultadosHTML(data) {
 
-            document.getElementById("ldlValor").textContent = inmediatos.ldl.valor;
-            document.getElementById("ldlEstado").textContent = inmediatos.ldl.estado;
+        // -----------------------------------
+        // NIVEL GENERAL
+        // -----------------------------------
+        const riesgos = Object.values(data.resultados)
+            .filter(r => r.includes('Riesgo') || r.includes('Alto'))
+            .length;
 
-            document.getElementById("glucosaValor").textContent = inmediatos.glucosa.valor;
-            document.getElementById("glucosaEstado").textContent = inmediatos.glucosa.estado;
+        let nivel, txt, bg;
 
-            document.getElementById("hemoglobinaValor").textContent = inmediatos.hemoglobina.valor;
-            document.getElementById("hemoglobinaEstado").textContent = inmediatos.hemoglobina.estado;
+        if (riesgos === 0) {
+            nivel = 'Bajo - Saludable';
+            txt = 'text-green-600';
+            bg = 'bg-green-100';
+        } else if (riesgos <= 2) {
+            nivel = 'Moderado';
+            txt = 'text-yellow-600';
+            bg = 'bg-yellow-100';
+        } else {
+            nivel = 'Alto';
+            txt = 'text-red-600';
+            bg = 'bg-red-100';
+        }
 
-            // ---------------------------
-            // PROYECCIONES BACKEND
-            // ---------------------------
-            const proy = data.proyecciones;
+        document.getElementById('nivelRiesgo').className = `${bg} rounded-xl p-6 mb-6`;
+        document.getElementById('nivelRiesgo').innerHTML = `
+            <div class="text-center">
+                <p class="text-gray-700 font-semibold mb-2">Evaluación de Riesgo General</p>
+                <p class="text-4xl font-bold ${txt}">${nivel}</p>
+                <p class="text-gray-600 mt-2">Factores detectados: ${riesgos}</p>
+            </div>
+        `;
 
-            document.getElementById("proyLDL").textContent = proy.ldl + " %";
-            document.getElementById("proyGlucosa").textContent = proy.glucosa + " %";
-            document.getElementById("proyHemoglobina").textContent = proy.hemoglobina + " %";
-        });
-    </script>
+        // -----------------------------------
+        // RESULTADOS INMEDIATOS
+        // -----------------------------------
+        const labels = {
+            Glucosa: 'Glucosa (mg/dL)',
+            Colesterol_LDL: 'Colesterol LDL (mg/dL)',
+            Hemoglobina: 'Hemoglobina (g/dL)'
+        };
 
+        let htmlR = '';
+
+        for (const [k, resultado] of Object.entries(data.resultados)) {
+            const valor = datosActuales.valores[k];
+
+            const normal = resultado.includes('Normal') || resultado.includes('Óptimo');
+
+            const color = normal
+                ? 'text-green-600'
+                : resultado.includes('Alto')
+                ? 'text-red-600'
+                : 'text-yellow-600';
+
+            const bg2 = normal
+                ? 'bg-green-50'
+                : resultado.includes('Alto')
+                ? 'bg-red-50'
+                : 'bg-yellow-50';
+
+            const border = normal
+                ? 'border-green-600'
+                : resultado.includes('Alto')
+                ? 'border-red-600'
+                : 'border-yellow-600';
+
+            const icono = normal
+                ? '<i class="fa-solid fa-check-double"></i>'
+                : '<i class="fa-solid fa-triangle-exclamation"></i>';
+
+            htmlR += `
+                <div class="${bg2} rounded-lg p-5 border-l-4 ${border}">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-800">${labels[k]}</p>
+                            <p class="text-gray-700">Valor: <span class="font-semibold">${valor}</span></p>
+                        </div>
+                        <p class="font-bold text-xl ${color}">${icono} ${resultado}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        document.getElementById('resultadosInmediatos').innerHTML = htmlR;
+
+        // -----------------------------------
+        // PROYECCIONES DEL BACKEND 
+        // -----------------------------------
+        let htmlProy = '';
+
+        for (const [nombre, valor] of Object.entries(data.proyecciones)) {
+            const color =
+                valor < 20 ? 'text-green-600' :
+                valor < 50 ? 'text-yellow-600' :
+                valor < 75 ? 'text-orange-600' :
+                             'text-red-600';
+
+            const fondo =
+                valor < 20 ? 'bg-green-50' :
+                valor < 50 ? 'bg-yellow-50' :
+                valor < 75 ? 'bg-orange-50' :
+                             'bg-red-50';
+
+            const nombreFmt = nombre
+                .replace('_12', ' - 12 meses')
+                .replace('_60', ' - 60 meses (5 años)')
+                .replace('_', ' ');
+
+            htmlProy += `
+                <div class="${fondo} p-5 rounded-lg">
+                    <p class="font-semibold text-gray-800">${nombreFmt}</p>
+                    <p class="text-3xl font-bold ${color}">${valor.toFixed(1)}</p>
+                </div>
+            `;
+        }
+
+        document.getElementById('proyecciones').innerHTML = htmlProy;
+
+        // -----------------------------------
+        // RECOMENDACIONES 
+        // -----------------------------------
+        let rec = '';
+
+        if (nivel.includes('Bajo')) {
+            rec = `
+                <p class="flex items-start gap-2"><span class="text-green-600 font-bold">✓</span>Mantén hábitos saludables.</p>
+                <p class="flex items-start gap-2"><span class="text-green-600 font-bold">✓</span>Chequeos anuales.</p>
+            `;
+        } else if (nivel.includes('Moderado')) {
+            rec = `
+                <p class="flex items-start gap-2"><span class="text-yellow-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span>Algunos valores requieren seguimiento.</p>
+                <p class="flex items-start gap-2"><span class="text-yellow-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span>Consulta con un profesional.</p>
+            `;
+        } else {
+            rec = `
+                <p class="flex items-start gap-2"><span class="text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span>Consulta urgente con un médico.</p>
+                <p class="flex items-start gap-2"><span class="text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span>Riesgo significativo detectado.</p>
+            `;
+        }
+
+        document.getElementById('recomendaciones').innerHTML = rec;
+
+        mostrarResultados();
+    }
+</script>
 
 </body>
 </html>
