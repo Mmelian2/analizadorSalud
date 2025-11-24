@@ -136,60 +136,54 @@
     </div>
 
     <script>
-    document.getElementById("form-datos").addEventListener("submit", async (e) => {
-        e.preventDefault();
+        document.getElementById("form-datos").addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-        // Captura de datos del formulario
-        const datos = {
-            ldl: parseFloat(document.getElementById("ldl").value),
-            glucosa: parseFloat(document.getElementById("glucosa").value),
-            hemoglobina: parseFloat(document.getElementById("hemoglobina").value)
-        };
+            // Tomar los valores del formulario
+            const datos = {
+                ldl: parseFloat(document.getElementById("ldl").value),
+                glucosa: parseFloat(document.getElementById("glucosa").value),
+                hemoglobina: parseFloat(document.getElementById("hemoglobina").value)
+            };
 
-        // Enviar los valores al backend analizador2.py
-        const respuesta = await fetch("/analizar", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(datos)
+            // Enviar al backend sin modificar analizador.py
+            const response = await fetch("/analizar", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(datos)
+            });
+
+            const data = await response.json();
+
+            // Mostrar secciones
+            document.getElementById("resultadosInmediatos").style.display = "block";
+            document.getElementById("proyeccionesLargoPlazo").style.display = "block";
+
+            // ---------------------------
+            // RESULTADOS INMEDIATOS
+            // ---------------------------
+            const inmediatos = data.resultados_inmediatos;
+
+            document.getElementById("ldlValor").textContent = inmediatos.ldl.valor;
+            document.getElementById("ldlEstado").textContent = inmediatos.ldl.estado;
+
+            document.getElementById("glucosaValor").textContent = inmediatos.glucosa.valor;
+            document.getElementById("glucosaEstado").textContent = inmediatos.glucosa.estado;
+
+            document.getElementById("hemoglobinaValor").textContent = inmediatos.hemoglobina.valor;
+            document.getElementById("hemoglobinaEstado").textContent = inmediatos.hemoglobina.estado;
+
+            // ---------------------------
+            // PROYECCIONES BACKEND
+            // ---------------------------
+            const proy = data.proyecciones;
+
+            document.getElementById("proyLDL").textContent = proy.ldl + " %";
+            document.getElementById("proyGlucosa").textContent = proy.glucosa + " %";
+            document.getElementById("proyHemoglobina").textContent = proy.hemoglobina + " %";
         });
+    </script>
 
-        const resultado = await respuesta.json();
-
-        // Mostrar sección de resultados si estaba oculta
-        document.getElementById("resultadosInmediatos").style.display = "block";
-        document.getElementById("proyeccionesLargoPlazo").style.display = "block";
-
-        // ---------------------
-        // RESULTADOS INMEDIATOS
-        //----------------------
-        document.getElementById("ldlValor").textContent =
-            resultado.resultados_inmediatos.ldl.valor;
-        document.getElementById("ldlEstado").textContent =
-            resultado.resultados_inmediatos.ldl.estado;
-
-        document.getElementById("glucosaValor").textContent =
-            resultado.resultados_inmediatos.glucosa.valor;
-        document.getElementById("glucosaEstado").textContent =
-            resultado.resultados_inmediatos.glucosa.estado;
-
-        document.getElementById("hemoglobinaValor").textContent =
-            resultado.resultados_inmediatos.hemoglobina.valor;
-        document.getElementById("hemoglobinaEstado").textContent =
-            resultado.resultados_inmediatos.hemoglobina.estado;
-
-        // ---------------------
-        // PROYECCIONES LARGO PLAZO
-        //----------------------
-        document.getElementById("proyLDL").textContent =
-            resultado.proyecciones.ldl + " %";
-
-        document.getElementById("proyGlucosa").textContent =
-            resultado.proyecciones.glucosa + " %";
-
-        document.getElementById("proyHemoglobina").textContent =
-            resultado.proyecciones.hemoglobina + " %";
-    });
-</script>
 
 </body>
 </html>
