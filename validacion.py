@@ -1,3 +1,4 @@
+
 def mostrar_informe(nombre, sexo, valores, resultados, analizador):
     print("\n==============================================")
     print(f"           INFORME DE LABORATORIO - {nombre}")
@@ -12,7 +13,7 @@ def mostrar_informe(nombre, sexo, valores, resultados, analizador):
         valor = valores[k]
         interpretacion = resultados[k]
 
-        #----proyección a 5 años----
+        # Proyección a 5 años
         ref = analizador.rangos[k]['Normal'] if k != 'Hemoglobina' else analizador.rangos[k]['Min_Normal']
         riesgo = analizador.proyeccion_riesgo_exponencial(valor, ref, 60)
 

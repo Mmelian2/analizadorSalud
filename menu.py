@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from analizador import AnalizadorSalud
 from paciente import Paciente
 from validacion import mostrar_informe, pedir_opcion, pedir_sexo, pedir_valores
@@ -33,7 +34,6 @@ def menu():
         else:
             print("Opción inválida.")
             continue
-
 
         # Crear el paciente
         paciente = Paciente(nombre, "Test", 30, sexo == "M", valores)

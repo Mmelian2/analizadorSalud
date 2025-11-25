@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from flask import Flask, render_template, request, jsonify
 from analizador import AnalizadorSalud
 from paciente import Paciente
@@ -23,7 +24,9 @@ def analizar():
     
     # Ejecutar análisis
     paciente.analizar(analizador)
-    proyecciones = paciente.proyeccion_riesgo(analizador)
+    
+    # Calcular proyecciones a 12, 24 y 60 meses
+    proyecciones = paciente.proyeccion_riesgo(analizador, plazos=[12, 24, 60])
     
     # Preparar respuesta
     response = {
@@ -37,4 +40,4 @@ def analizar():
 if __name__ == '__main__':
     import os
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=True)

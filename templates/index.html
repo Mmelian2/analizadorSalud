@@ -15,12 +15,10 @@
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
-
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <div id="app" class="p-8">
         <!-- Menu Principal -->
-         
         <div id="menu" class="max-w-4xl mx-auto">
             <div class="text-center mb-12">
                 <h1 class="text-4xl font-bold text-gray-800 mb-2"><i class="fa-solid fa-stethoscope"></i> Analizador de Salud</h1>
@@ -109,7 +107,7 @@
             </button>
 
             <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
-                <h2 class="text-3xl font-bold text-gray-800 mb-6"><i class="fa-solid fa-clipboard-list"></i>Informe de Análisis</h2>
+                <h2 class="text-3xl font-bold text-gray-800 mb-6"><i class="fa-solid fa-clipboard-list"></i> Informe de Análisis</h2>
                 
                 <div id="nivelRiesgo" class="rounded-xl p-6 mb-6"></div>
                 
@@ -120,7 +118,10 @@
             <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
                 <h3 class="text-2xl font-bold text-gray-800 mb-4"><i class="fa-solid fa-calendar"></i> Proyección de Riesgos a Largo Plazo</h3>
                 <p class="text-gray-600 mb-6">Índice de riesgo proyectado si los valores actuales persisten sin tratamiento (0-100)</p>
-                <div id="proyecciones" class="grid md:grid-cols-2 gap-4"></div>
+                
+                <!-- Proyecciones organizadas por parámetro -->
+                <div id="proyecciones" class="space-y-6"></div>
+                
                 <div class="mt-6 p-4 bg-blue-50 rounded-lg">
                     <p class="text-sm text-gray-700">
                         <strong>Nota:</strong> Las proyecciones utilizan un modelo exponencial. Valores bajos (&lt;20) indican 
@@ -140,6 +141,7 @@
     let sexo = 'M';
     let datosActuales = {};
 
+    // DATOS SINCRONIZADOS CON data.py
     const PACIENTES = {
         saludable: {
             sexo: 'M',
@@ -197,9 +199,6 @@
         mostrarFormulario();
     }
 
-    // ===========================
-    // VALIDACIONES DEL FRONTEND
-    // ===========================
     function validarValores(v) {
         if (isNaN(v.Glucosa) || v.Glucosa < 40 || v.Glucosa > 400) {
             alert("La glucosa debe estar entre 40 y 400 mg/dL.");
@@ -216,9 +215,6 @@
         return true;
     }
 
-    // ==============================
-    // ENVÍO REAL AL BACKEND
-    // ==============================
     async function analizarSalud() {
         const valores = {
             Glucosa: parseFloat(document.getElementById('Glucosa').value),
@@ -241,21 +237,14 @@
             });
 
             const data = await response.json();
-
             mostrarResultadosHTML(data);
         } catch (error) {
             alert("Error al comunicarse con el servidor: " + error.message);
         }
     }
 
-    // -----------------------------
-    // MOSTRAR DATOS DEL BACKEND
-    // -----------------------------
     function mostrarResultadosHTML(data) {
-
-        // -----------------------------------
-        // NIVEL GENERAL
-        // -----------------------------------
+        // NIVEL GENERAL DE RIESGO
         const riesgos = Object.values(data.resultados)
             .filter(r => r.includes('Riesgo') || r.includes('Alto'))
             .length;
@@ -285,9 +274,7 @@
             </div>
         `;
 
-        // -----------------------------------
         // RESULTADOS INMEDIATOS
-        // -----------------------------------
         const labels = {
             Glucosa: 'Glucosa (mg/dL)',
             Colesterol_LDL: 'Colesterol LDL (mg/dL)',
@@ -298,30 +285,11 @@
 
         for (const [k, resultado] of Object.entries(data.resultados)) {
             const valor = datosActuales.valores[k];
-
             const normal = resultado.includes('Normal') || resultado.includes('Óptimo');
-
-            const color = normal
-                ? 'text-green-600'
-                : resultado.includes('Alto')
-                ? 'text-red-600'
-                : 'text-yellow-600';
-
-            const bg2 = normal
-                ? 'bg-green-50'
-                : resultado.includes('Alto')
-                ? 'bg-red-50'
-                : 'bg-yellow-50';
-
-            const border = normal
-                ? 'border-green-600'
-                : resultado.includes('Alto')
-                ? 'border-red-600'
-                : 'border-yellow-600';
-
-            const icono = normal
-                ? '<i class="fa-solid fa-check-double"></i>'
-                : '<i class="fa-solid fa-triangle-exclamation"></i>';
+            const color = normal ? 'text-green-600' : resultado.includes('Alto') ? 'text-red-600' : 'text-yellow-600';
+            const bg2 = normal ? 'bg-green-50' : resultado.includes('Alto') ? 'bg-red-50' : 'bg-yellow-50';
+            const border = normal ? 'border-green-600' : resultado.includes('Alto') ? 'border-red-600' : 'border-yellow-600';
+            const icono = normal ? '<i class="fa-solid fa-check-double"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
 
             htmlR += `
                 <div class="${bg2} rounded-lg p-5 border-l-4 ${border}">
@@ -338,58 +306,72 @@
 
         document.getElementById('resultadosInmediatos').innerHTML = htmlR;
 
-        // -----------------------------------
-        // PROYECCIONES DEL BACKEND 
-        // -----------------------------------
+        // PROYECCIONES ORGANIZADAS POR PARÁMETRO
+        const proyeccionesPorParametro = {
+            'Glucosa': [],
+            'Colesterol_LDL': [],
+            'Hemoglobina': []
+        };
+
+        // Organizar proyecciones
+        for (const [clave, valor] of Object.entries(data.proyecciones)) {
+            const [parametro, meses] = clave.split('_');
+            proyeccionesPorParametro[parametro].push({ meses: parseInt(meses), valor });
+        }
+
         let htmlProy = '';
 
-        for (const [nombre, valor] of Object.entries(data.proyecciones)) {
-            const color =
-                valor < 20 ? 'text-green-600' :
-                valor < 50 ? 'text-yellow-600' :
-                valor < 75 ? 'text-orange-600' :
-                             'text-red-600';
+        for (const [parametro, proyecciones] of Object.entries(proyeccionesPorParametro)) {
+            htmlProy += `
+                <div class="bg-gray-50 p-5 rounded-lg">
+                    <h4 class="text-lg font-bold text-gray-800 mb-3">${labels[parametro]}</h4>
+                    <div class="grid grid-cols-3 gap-3">
+            `;
 
-            const fondo =
-                valor < 20 ? 'bg-green-50' :
-                valor < 50 ? 'bg-yellow-50' :
-                valor < 75 ? 'bg-orange-50' :
-                             'bg-red-50';
+            // Ordenar por meses
+            proyecciones.sort((a, b) => a.meses - b.meses);
 
-            const nombreFmt = nombre
-                .replace('_12', ' - 12 meses')
-                .replace('_60', ' - 60 meses (5 años)')
-                .replace('_', ' ');
+            for (const { meses, valor } of proyecciones) {
+                const color = valor < 20 ? 'text-green-600' : valor < 50 ? 'text-yellow-600' : valor < 75 ? 'text-orange-600' : 'text-red-600';
+                const fondo = valor < 20 ? 'bg-green-50' : valor < 50 ? 'bg-yellow-50' : valor < 75 ? 'bg-orange-50' : 'bg-red-50';
+                const anios = meses === 12 ? '1 año' : meses === 24 ? '2 años' : '5 años';
+
+                htmlProy += `
+                    <div class="${fondo} p-4 rounded-lg text-center">
+                        <p class="text-sm font-semibold text-gray-700 mb-1">${anios}</p>
+                        <p class="text-2xl font-bold ${color}">${valor.toFixed(1)}</p>
+                    </div>
+                `;
+            }
 
             htmlProy += `
-                <div class="${fondo} p-5 rounded-lg">
-                    <p class="font-semibold text-gray-800">${nombreFmt}</p>
-                    <p class="text-3xl font-bold ${color}">${valor.toFixed(1)}</p>
+                    </div>
                 </div>
             `;
         }
 
         document.getElementById('proyecciones').innerHTML = htmlProy;
 
-        // -----------------------------------
-        // RECOMENDACIONES 
-        // -----------------------------------
+        // RECOMENDACIONES
         let rec = '';
 
         if (nivel.includes('Bajo')) {
             rec = `
                 <p class="flex items-start gap-2"><span class="text-green-600 font-bold">✓</span>Mantén hábitos saludables.</p>
                 <p class="flex items-start gap-2"><span class="text-green-600 font-bold">✓</span>Chequeos anuales.</p>
+                <p class="flex items-start gap-2"><span class="text-green-600 font-bold">✓</span>Continúa con dieta balanceada y ejercicio regular.</p>
             `;
         } else if (nivel.includes('Moderado')) {
             rec = `
                 <p class="flex items-start gap-2"><span class="text-yellow-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span>Algunos valores requieren seguimiento.</p>
                 <p class="flex items-start gap-2"><span class="text-yellow-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span>Consulta con un profesional.</p>
+                <p class="flex items-start gap-2"><span class="text-yellow-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span>Considera ajustes en tu estilo de vida.</p>
             `;
         } else {
             rec = `
                 <p class="flex items-start gap-2"><span class="text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span>Consulta urgente con un médico.</p>
                 <p class="flex items-start gap-2"><span class="text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span>Riesgo significativo detectado.</p>
+                <p class="flex items-start gap-2"><span class="text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i></span>No demores la atención médica profesional.</p>
             `;
         }
 
