@@ -28,13 +28,13 @@ Este proyecto permite analizar datos de salud tales como glucosa, hemoglobina y 
    En Linux/macOS:
    ```bash
    python3 -m venv venv
-   source venv/bin/activat
-
-En Windows:
-   ```bash
-   python -m venv venv
-   venv\Scripts\activate
-    
+   source venv/bin/activate
+  
+  En Windows:
+  ```bash
+  python -m venv venv
+  venv\Scripts\activate
+  ```
          
 3. Instalar las dependencias
     ```bash
