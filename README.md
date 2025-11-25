@@ -23,17 +23,18 @@ Este proyecto permite analizar datos de salud tales como glucosa, hemoglobina y 
    ```bash
    git clone https://github.com/Mmelian2/analizadorSalud.git
    cd analizadorSalud
+   
 2. Crear y activar el entorno virtual
    En Linux/macOS:
    ```bash
    python3 -m venv venv
    source venv/bin/activat
 
-  En Windows:
-
-      ```bash
-         python -m venv venv
-         venv\Scripts\activate
+En Windows:
+   ```bash
+   python -m venv venv
+   venv\Scripts\activate
+    
          
 3. Instalar las dependencias
     ```bash
