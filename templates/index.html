@@ -306,51 +306,72 @@
 
         document.getElementById('resultadosInmediatos').innerHTML = htmlR;
 
-        // PROYECCIONES ORGANIZADAS POR PARÁMETRO
+        // PROYECCIONES ORGANIZADAS POR PARAMETRO
         const proyeccionesPorParametro = {
             'Glucosa': [],
             'Colesterol_LDL': [],
             'Hemoglobina': []
         };
 
+        // Mapeo para traducir claves que vienen del backend
+        const MAPEO = {
+            "Glucosa": "Glucosa",
+            "LDL": "Colesterol_LDL",
+            "Colesterol_LDL": "Colesterol_LDL",
+            "Hemoglobina": "Hemoglobina",
+            "HB": "Hemoglobina"
+        };
+
         // Organizar proyecciones
         for (const [clave, valor] of Object.entries(data.proyecciones)) {
-            const [parametro, meses] = clave.split('_');
-            proyeccionesPorParametro[parametro].push({ meses: parseInt(meses), valor });
+            let [parametro, meses] = clave.split('_');
+
+            parametro = MAPEO[parametro];
+
+            if (!parametro || !proyeccionesPorParametro[parametro]) continue;
+
+            proyeccionesPorParametro[parametro].push({
+                meses: parseInt(meses),
+                valor
+            });
         }
 
-        let htmlProy = '';
+        // GENERAR HTML PARA CADA PARÁMETRO
+        let htmlProy = "";
 
-        for (const [parametro, proyecciones] of Object.entries(proyeccionesPorParametro)) {
-            htmlProy += `
-                <div class="bg-gray-50 p-5 rounded-lg">
-                    <h4 class="text-lg font-bold text-gray-800 mb-3">${labels[parametro]}</h4>
-                    <div class="grid grid-cols-3 gap-3">
-            `;
+        for (const [parametro, lista] of Object.entries(proyeccionesPorParametro)) {
+            if (lista.length === 0) continue;
 
             // Ordenar por meses
-            proyecciones.sort((a, b) => a.meses - b.meses);
+            lista.sort((a, b) => a.meses - b.meses);
 
-            for (const { meses, valor } of proyecciones) {
-                const color = valor < 20 ? 'text-green-600' : valor < 50 ? 'text-yellow-600' : valor < 75 ? 'text-orange-600' : 'text-red-600';
-                const fondo = valor < 20 ? 'bg-green-50' : valor < 50 ? 'bg-yellow-50' : valor < 75 ? 'bg-orange-50' : 'bg-red-50';
-                const anios = meses === 12 ? '1 año' : meses === 24 ? '2 años' : '5 años';
+            const nombreMostrar = {
+                Glucosa: "Glucosa (mg/dL)",
+                Colesterol_LDL: "Colesterol LDL (mg/dL)",
+                Hemoglobina: "Hemoglobina (g/dL)"
+            }[parametro];
 
-                htmlProy += `
-                    <div class="${fondo} p-4 rounded-lg text-center">
-                        <p class="text-sm font-semibold text-gray-700 mb-1">${anios}</p>
-                        <p class="text-2xl font-bold ${color}">${valor.toFixed(1)}</p>
-                    </div>
+            let items = "";
+
+            for (const p of lista) {
+                items += `
+                    <p class="text-gray-700">
+                        <span class="font-semibold">${p.meses} meses:</span>
+                        Riesgo proyectado: <strong>${p.valor}</strong>
+                    </p>
                 `;
             }
 
             htmlProy += `
-                    </div>
+                <div class="bg-gray-50 p-5 rounded-lg border-l-4 border-indigo-500">
+                    <p class="font-bold text-gray-800 text-lg mb-2">${nombreMostrar}</p>
+                    ${items}
                 </div>
             `;
         }
 
         document.getElementById('proyecciones').innerHTML = htmlProy;
+
 
         // RECOMENDACIONES
         let rec = '';
