@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, render_template, request, jsonify
-from analizador import AnalizadorSalud
+from analizador2 import AnalizadorSalud
 from paciente import Paciente
 
 app = Flask(__name__)
